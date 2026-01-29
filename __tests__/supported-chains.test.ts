@@ -59,17 +59,17 @@ describe('OKXDexClient Chain Support', () => {
   });
 
   const chainTestCases = [
-    { name: 'EVM', chainId: '1' },
-    { name: 'Solana', chainId: '501' },
-    { name: 'Sui', chainId: '784' },
-    { name: 'TON', chainId: '607' },
-    { name: 'Tron', chainId: '195' }
+    { name: 'EVM', chainIndex: '1' },
+    { name: 'Solana', chainIndex: '501' },
+    { name: 'Sui', chainIndex: '784' },
+    { name: 'TON', chainIndex: '607' },
+    { name: 'Tron', chainIndex: '195' }
   ];
 
   describe('getChainData', () => {
-    chainTestCases.forEach(({ name, chainId }) => {
+    chainTestCases.forEach(({ name, chainIndex }) => {
       it(`should fetch supported chains for ${name}`, async () => {
-        const chains = await withRetry(() => client.dex.getChainData(chainId));
+        const chains = await withRetry(() => client.dex.getChainData(chainIndex));
         
         expect(chains).toBeDefined();
         expect(chains.data).toBeDefined();

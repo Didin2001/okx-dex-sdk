@@ -33,7 +33,7 @@ describe('Solana Examples Tests', () => {
   let client: OKXDexClient;
   let connection: Connection;
   let wallet: ReturnType<typeof createWallet>;
-  const chainId = '501'; // Solana mainnet
+  const chainIndex = '501'; // Solana mainnet
   const USDC_ADDRESS = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
   const SOL_ADDRESS = 'So11111111111111111111111111111111111111112';
 
@@ -67,21 +67,21 @@ describe('Solana Examples Tests', () => {
   // Group similar tests to run in parallel
   describe('Basic API Tests', () => {
     it('should fetch chain configuration', async () => {
-      const chains = await withRetry(() => client.dex.getChainData(chainId));
-      expect(chains.data[0].chainId.toString()).toBe(chainId);
+      const chains = await withRetry(() => client.dex.getChainData(chainIndex));
+      expect(chains.data[0].chainId.toString()).toBe(chainIndex);
       expect(chains.data[0].chainName).toBeDefined();
     });
 
     it('should validate chain configuration', () => {
-      const networkConfig = client['config'].networks?.[chainId];
+      const networkConfig = client['config'].networks?.[chainIndex];
       expect(networkConfig).toBeDefined();
-      expect(networkConfig?.id).toBe(chainId);
+      expect(networkConfig?.id).toBe(chainIndex);
       expect(networkConfig?.explorer).toBeDefined();
       expect(networkConfig?.defaultSlippage).toBeDefined();
     });
 
     it('should fetch liquidity information', async () => {
-      const liquidity = await withRetry(() => client.dex.getLiquidity(chainId));
+      const liquidity = await withRetry(() => client.dex.getLiquidity(chainIndex));
       expect(liquidity).toBeDefined();
       expect(Array.isArray(liquidity.data)).toBeTruthy();
     });
@@ -93,11 +93,11 @@ describe('Solana Examples Tests', () => {
     // Use beforeAll to cache quote response for multiple tests
     beforeAll(async () => {
       quoteResponse = await withRetry(() => client.dex.getQuote({
-        chainId,
+        chainIndex,
         fromTokenAddress: USDC_ADDRESS,
         toTokenAddress: SOL_ADDRESS,
         amount: '1000000',
-        slippage: '0.5'
+        slippagePercent: '0.5'
       }));
     });
 
@@ -116,11 +116,11 @@ describe('Solana Examples Tests', () => {
 
     it('should handle invalid token addresses', async () => {
       await expect(client.dex.getQuote({
-        chainId,
+        chainIndex,
         fromTokenAddress: 'invalid',
         toTokenAddress: SOL_ADDRESS,
         amount: '1000000',
-        slippage: '0.5'
+        slippagePercent: '0.5'
       })).rejects.toThrow();
     });
   });
@@ -128,11 +128,11 @@ describe('Solana Examples Tests', () => {
   describe('Token List Tests', () => {
     it('should fetch all supported tokens', async () => {
       const quote = await withRetry(() => client.dex.getQuote({
-        chainId,
+        chainIndex,
         fromTokenAddress: USDC_ADDRESS,
         toTokenAddress: SOL_ADDRESS,
         amount: '1000000',
-        slippage: '0.5'
+        slippagePercent: '0.5'
       }));
 
       expect(quote).toBeDefined();
@@ -144,17 +144,17 @@ describe('Solana Examples Tests', () => {
   });
 
   describe('Swap Data Tests', () => {
-    it('should fetch swap data with auto slippage', async () => {
+    it('should fetch swap data with auto slippagePercent', async () => {
       try {
         const swapData = await withRetry(() => client.dex.getSwapData({
-          chainId,
+          chainIndex,
           fromTokenAddress: USDC_ADDRESS,
           toTokenAddress: SOL_ADDRESS,
           amount: '1000000',
           autoSlippage: true,
-          maxAutoSlippage: '1',
+          maxAutoSlippagePercent: '1',
           userWalletAddress: process.env.SOLANA_WALLET_ADDRESS!,
-          slippage: '0.5'
+          slippagePercent: '0.5'
         }));
 
         expect(swapData).toBeDefined();
@@ -165,14 +165,14 @@ describe('Solana Examples Tests', () => {
       }
     });
 
-    it('should fetch swap data with manual slippage', async () => {
+    it('should fetch swap data with manual slippagePercent', async () => {
       try {
         const swapData = await withRetry(() => client.dex.getSwapData({
-          chainId,
+          chainIndex,
           fromTokenAddress: USDC_ADDRESS,
           toTokenAddress: SOL_ADDRESS,
           amount: '1000000',
-          slippage: '0.5',
+          slippagePercent: '0.5',
           userWalletAddress: process.env.SOLANA_WALLET_ADDRESS!
         }));
 
@@ -199,11 +199,11 @@ describe('Solana Examples Tests', () => {
       });
 
       await expect(invalidClient.dex.getQuote({
-        chainId,
+        chainIndex,
         fromTokenAddress: USDC_ADDRESS,
         toTokenAddress: SOL_ADDRESS,
         amount: '1000000',
-        slippage: '0.5'
+        slippagePercent: '0.5'
       })).rejects.toThrow();
     });
   });
