@@ -35,7 +35,7 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 5): Promise<T> {
 
 describe('EVM Examples Tests', () => {
   let client: OKXDexClient;
-  const chainId = '8453'; // Base chain
+  const chainIndex = '8453'; // Base chain
   const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
   const WETH_ADDRESS = '0x4200000000000000000000000000000000000006';
 
@@ -85,14 +85,14 @@ describe('EVM Examples Tests', () => {
     });
 
     it('should fetch token approval address', async () => {
-      const chains = await withRetry(() => client.dex.getChainData(chainId));
+      const chains = await withRetry(() => client.dex.getChainData(chainIndex));
       expect(chains.data[0].dexTokenApproveAddress).toBeDefined();
       expect(chains.data[0].dexTokenApproveAddress).toMatch(/^0x[a-fA-F0-9]{40}$/);
     });
 
     it('should check token approval status', async () => {
       const result = await withRetry(() => client.dex.executeApproval({
-        chainId,
+        chainIndex,
         tokenContractAddress: USDC_ADDRESS,
         approveAmount: '0' // Just checking status
       }));
@@ -103,11 +103,11 @@ describe('EVM Examples Tests', () => {
   describe('Quote Tests', () => {
     it('should fetch quote for token swap', async () => {
       const quote = await client.dex.getQuote({
-        chainId,
+        chainIndex,
         fromTokenAddress: USDC_ADDRESS,
         toTokenAddress: WETH_ADDRESS,
         amount: '1000000', // 1 USDC
-        slippage: '0.5'
+        slippagePercent: '0.5'
       });
 
       expect(quote).toBeDefined();
@@ -118,18 +118,18 @@ describe('EVM Examples Tests', () => {
 
     it('should handle invalid token addresses', async () => {
       await expect(client.dex.getQuote({
-        chainId,
+        chainIndex,
         fromTokenAddress: '0x0000000000000000000000000000000000000000',
         toTokenAddress: WETH_ADDRESS,
         amount: '1000000',
-        slippage: '0.5'
+        slippagePercent: '0.5'
       })).rejects.toThrow();
     });
   });
 
   describe('Liquidity Tests', () => {
     it('should fetch liquidity information', async () => {
-      const liquidity = await client.dex.getLiquidity(chainId);
+      const liquidity = await client.dex.getLiquidity(chainIndex);
       expect(liquidity).toBeDefined();
       expect(Array.isArray(liquidity.data)).toBeTruthy();
     });
@@ -138,11 +138,11 @@ describe('EVM Examples Tests', () => {
   describe('Token List Tests', () => {
     it('should fetch all supported tokens', async () => {
       const quote = await withRetry(() => client.dex.getQuote({
-        chainId,
+        chainIndex,
         fromTokenAddress: USDC_ADDRESS,
         toTokenAddress: WETH_ADDRESS,
         amount: '1000000',
-        slippage: '0.5'
+        slippagePercent: '0.5'
       }));
 
       expect(quote).toBeDefined();
@@ -154,11 +154,11 @@ describe('EVM Examples Tests', () => {
 
     it('should find USDC in token list', async () => {
       const quote = await withRetry(() => client.dex.getQuote({
-        chainId,
+        chainIndex,
         fromTokenAddress: USDC_ADDRESS,
         toTokenAddress: WETH_ADDRESS,
         amount: '1000000',
-        slippage: '0.5'
+        slippagePercent: '0.5'
       }));
 
       const token = quote.data[0].fromToken;
@@ -169,32 +169,32 @@ describe('EVM Examples Tests', () => {
 
   describe('Chain Information Tests', () => {
     it('should fetch chain configuration', async () => {
-      const chains = await withRetry(() => client.dex.getChainData(chainId));
-      expect(chains.data[0].chainId.toString()).toBe(chainId);
+      const chains = await withRetry(() => client.dex.getChainData(chainIndex));
+      expect(chains.data[0].chainId.toString()).toBe(chainIndex);
       expect(chains.data[0].chainName).toBeDefined();
     });
 
     it('should validate chain configuration', () => {
-      const networkConfig = client['config'].networks?.[chainId];
+      const networkConfig = client['config'].networks?.[chainIndex];
       expect(networkConfig).toBeDefined();
-      expect(networkConfig?.id).toBe(chainId);
+      expect(networkConfig?.id).toBe(chainIndex);
       expect(networkConfig?.explorer).toBeDefined();
       expect(networkConfig?.defaultSlippage).toBeDefined();
     });
   });
 
   describe('Swap Data Tests', () => {
-    it('should fetch swap data with auto slippage', async () => {
+    it('should fetch swap data with auto slippagePercent', async () => {
       try {
         const swapData = await withRetry(() => client.dex.getSwapData({
-          chainId,
+          chainIndex,
           fromTokenAddress: USDC_ADDRESS,
           toTokenAddress: WETH_ADDRESS,
           amount: '1000000', // Match quote test amount
           autoSlippage: true,
-          maxAutoSlippage: '1',
+          maxAutoSlippagePercent: '1',
           userWalletAddress: process.env.EVM_WALLET_ADDRESS!,
-          slippage: '0.5' // Add explicit slippage
+          slippagePercent: '0.5' // Add explicit slippagePercent
         }));
 
         expect(swapData).toBeDefined();
@@ -205,14 +205,14 @@ describe('EVM Examples Tests', () => {
       }
     });
 
-    it('should fetch swap data with manual slippage', async () => {
+    it('should fetch swap data with manual slippagePercent', async () => {
       try {
         const swapData = await withRetry(() => client.dex.getSwapData({
-          chainId,
+          chainIndex,
           fromTokenAddress: USDC_ADDRESS,
           toTokenAddress: WETH_ADDRESS,
           amount: '1000000', // Match quote test amount
-          slippage: '0.5',
+          slippagePercent: '0.5',
           userWalletAddress: process.env.EVM_WALLET_ADDRESS!
         }));
 
@@ -224,13 +224,13 @@ describe('EVM Examples Tests', () => {
       }
     });
 
-    it('should validate slippage parameters', async () => {
+    it('should validate slippagePercent parameters', async () => {
       await expect(client.dex.getSwapData({
-        chainId,
+        chainIndex,
         fromTokenAddress: USDC_ADDRESS,
         toTokenAddress: WETH_ADDRESS,
         amount: '1000000',
-        slippage: '2', // Invalid slippage > 1
+        slippagePercent: '2', // Invalid slippagePercent > 1
         userWalletAddress: process.env.EVM_WALLET_ADDRESS!
       })).rejects.toThrow();
     });
@@ -250,11 +250,11 @@ describe('EVM Examples Tests', () => {
       });
 
       await expect(invalidClient.dex.getQuote({
-        chainId,
+        chainIndex,
         fromTokenAddress: USDC_ADDRESS,
         toTokenAddress: WETH_ADDRESS,
         amount: '1000000',
-        slippage: '0.5'
+        slippagePercent: '0.5'
       })).rejects.toThrow();
     });
 
@@ -273,7 +273,7 @@ describe('EVM Examples Tests', () => {
       });
 
       await expect(clientWithInvalidRPC.dex.executeApproval({
-        chainId,
+        chainIndex,
         tokenContractAddress: USDC_ADDRESS,
         approveAmount: '1000000'
       })).rejects.toThrow();

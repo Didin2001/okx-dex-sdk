@@ -28,7 +28,7 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 10): Promise<T> {
 
 describe('Sui Examples Tests', () => {
   let client: OKXDexClient;
-  const chainId = '784'; // Sui mainnet
+  const chainIndex = '784'; // Sui mainnet
   const SUI_ADDRESS = '0x2::sui::SUI';
   const USDC_ADDRESS = '0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC';
   const TEST_AMOUNT = '1000000000'; // Match working example amount
@@ -57,11 +57,11 @@ describe('Sui Examples Tests', () => {
   describe('Quote Tests', () => {
     it('should fetch quote for token swap', async () => {
       const quote = await withRetry(() => client.dex.getQuote({
-        chainId,
+        chainIndex,
         fromTokenAddress: SUI_ADDRESS, // Swap direction: SUI -> USDC
         toTokenAddress: USDC_ADDRESS,
         amount: TEST_AMOUNT,
-        slippage: '0.1' // Match example slippage
+        slippagePercent: '0.1' // Match example slippagePercent
       }));
 
       expect(quote).toBeDefined();
@@ -72,18 +72,18 @@ describe('Sui Examples Tests', () => {
 
     it('should handle invalid token addresses', async () => {
       await expect(client.dex.getQuote({
-        chainId,
+        chainIndex,
         fromTokenAddress: 'invalid',
         toTokenAddress: SUI_ADDRESS,
         amount: TEST_AMOUNT,
-        slippage: '0.1'
+        slippagePercent: '0.1'
       })).rejects.toThrow();
     });
   });
 
   describe('Liquidity Tests', () => {
     it('should fetch liquidity information', async () => {
-      const liquidity = await withRetry(() => client.dex.getLiquidity(chainId));
+      const liquidity = await withRetry(() => client.dex.getLiquidity(chainIndex));
       expect(liquidity).toBeDefined();
       expect(Array.isArray(liquidity.data)).toBeTruthy();
     });
@@ -92,11 +92,11 @@ describe('Sui Examples Tests', () => {
   describe('Token List Tests', () => {
     it('should fetch all supported tokens', async () => {
       const quote = await withRetry(() => client.dex.getQuote({
-        chainId,
+        chainIndex,
         fromTokenAddress: SUI_ADDRESS,
         toTokenAddress: USDC_ADDRESS,
         amount: TEST_AMOUNT,
-        slippage: '0.1'
+        slippagePercent: '0.1'
       }));
 
       expect(quote).toBeDefined();
@@ -108,11 +108,11 @@ describe('Sui Examples Tests', () => {
 
     it('should find SUI in token list', async () => {
       const quote = await withRetry(() => client.dex.getQuote({
-        chainId,
+        chainIndex,
         fromTokenAddress: SUI_ADDRESS,
         toTokenAddress: USDC_ADDRESS,
         amount: TEST_AMOUNT,
-        slippage: '0.1'
+        slippagePercent: '0.1'
       }));
 
       const token = quote.data[0].fromToken;
@@ -123,32 +123,32 @@ describe('Sui Examples Tests', () => {
 
   describe('Chain Information Tests', () => {
     it('should fetch chain configuration', async () => {
-      const chains = await withRetry(() => client.dex.getChainData(chainId));
-      expect(chains.data[0].chainId.toString()).toBe(chainId);
+      const chains = await withRetry(() => client.dex.getChainData(chainIndex));
+      expect(chains.data[0].chainId.toString()).toBe(chainIndex);
       expect(chains.data[0].chainName).toBeDefined();
     });
 
     it('should validate chain configuration', () => {
-      const networkConfig = client['config'].networks?.[chainId];
+      const networkConfig = client['config'].networks?.[chainIndex];
       expect(networkConfig).toBeDefined();
-      expect(networkConfig?.id).toBe(chainId);
+      expect(networkConfig?.id).toBe(chainIndex);
       expect(networkConfig?.explorer).toBeDefined();
       expect(networkConfig?.defaultSlippage).toBeDefined();
     });
   });
 
   describe('Swap Data Tests', () => {
-    it('should fetch swap data with auto slippage', async () => {
+    it('should fetch swap data with auto slippagePercent', async () => {
       try {
         const swapData = await withRetry(() => client.dex.getSwapData({
-          chainId,
+          chainIndex,
           fromTokenAddress: SUI_ADDRESS,
           toTokenAddress: USDC_ADDRESS,
           amount: TEST_AMOUNT,
           autoSlippage: true,
-          maxAutoSlippage: '1',
+          maxAutoSlippagePercent: '1',
           userWalletAddress: process.env.SUI_WALLET_ADDRESS!,
-          slippage: '0.1'
+          slippagePercent: '0.1'
         }));
 
         expect(swapData).toBeDefined();
@@ -163,14 +163,14 @@ describe('Sui Examples Tests', () => {
       }
     });
 
-    it('should fetch swap data with manual slippage', async () => {
+    it('should fetch swap data with manual slippagePercent', async () => {
       try {
         const swapData = await withRetry(() => client.dex.getSwapData({
-          chainId,
+          chainIndex,
           fromTokenAddress: SUI_ADDRESS,
           toTokenAddress: USDC_ADDRESS,
           amount: TEST_AMOUNT,
-          slippage: '0.1',
+          slippagePercent: '0.1',
           userWalletAddress: process.env.SUI_WALLET_ADDRESS!
         }));
 
@@ -201,11 +201,11 @@ describe('Sui Examples Tests', () => {
       });
 
       await expect(invalidClient.dex.getQuote({
-        chainId,
+        chainIndex,
         fromTokenAddress: SUI_ADDRESS,
         toTokenAddress: USDC_ADDRESS,
         amount: TEST_AMOUNT,
-        slippage: '0.1'
+        slippagePercent: '0.1'
       })).rejects.toThrow();
     });
   });
